@@ -62,6 +62,73 @@ func TestDeleteUser_PublishesEvent(t *testing.T) {
 	require.Equal(t, user.ID, events[1].UserID)
 }
 
+func TestUpdateUser_RejectsDuplicateEmail(t *testing.T) {
+	svc, _, _ := setupService(t)
+	ctx := context.Background()
+
+	first, err := svc.CreateUser(ctx, CreateUserInput{
+		Name:  "Alice",
+		Email: "alice@example.com",
+		Age:   30,
+	})
+	require.NoError(t, err)
+
+	second, err := svc.CreateUser(ctx, CreateUserInput{
+		Name:  "Bob",
+		Email: "bob@example.com",
+		Age:   31,
+	})
+	require.NoError(t, err)
+
+	_, err = svc.UpdateUser(ctx, second.ID, UpdateUserInput{
+		Email: &first.Email,
+	})
+	require.ErrorIs(t, err, domain.ErrConflict)
+}
+
+func TestAddFile_ValidatesInput(t *testing.T) {
+	svc, _, _ := setupService(t)
+	ctx := context.Background()
+
+	user, err := svc.CreateUser(ctx, CreateUserInput{
+		Name:  "Files",
+		Email: "files@example.com",
+		Age:   28,
+	})
+	require.NoError(t, err)
+
+	_, err = svc.AddFile(ctx, user.ID, FileInput{
+		Name: "",
+		Path: "",
+	})
+	require.ErrorIs(t, err, domain.ErrInvalidInput)
+}
+
+func TestDeleteFiles_RemovesAll(t *testing.T) {
+	svc, _, _ := setupService(t)
+	ctx := context.Background()
+
+	user, err := svc.CreateUser(ctx, CreateUserInput{
+		Name:  "Files",
+		Email: "files2@example.com",
+		Age:   29,
+	})
+	require.NoError(t, err)
+
+	_, err = svc.AddFile(ctx, user.ID, FileInput{
+		Name: "doc",
+		Path: "/tmp/doc.pdf",
+	})
+	require.NoError(t, err)
+
+	err = svc.DeleteFiles(ctx, user.ID)
+	require.NoError(t, err)
+
+	files, err := svc.ListFiles(ctx, user.ID)
+	require.NoError(t, err)
+	require.Len(t, files, 0)
+}
+
 func setupService(t *testing.T) (*UserService, *postgresstorage.Repository, *event.InMemoryPublisher) {
 	t.Helper()
 

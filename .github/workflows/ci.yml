@@ -60,3 +60,6 @@ jobs:
 
       - name: Run tests (unit + e2e)
         run: go test ./...
+
+      - name: Targeted service + e2e suites
+        run: go test ./internal/service ./internal/e2e
