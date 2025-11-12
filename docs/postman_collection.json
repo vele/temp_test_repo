@@ -1,0 +1,152 @@
+{
+  "info": {
+    "name": "User Management API",
+    "_postman_id": "6b6ce6d1-0000-4000-b111-e2dc0000abcd",
+    "description": "Collection covering auth, user management, file operations, and event-publishing flows.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080" },
+    { "key": "username", "value": "admin" },
+    { "key": "password", "value": "changeme" },
+    { "key": "token", "value": "" },
+    { "key": "user_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth / Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/auth/login", "host": ["{{base_url}}"], "path": ["auth", "login"] }
+      },
+      "response": [],
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Login successful\", function () {",
+              "  pm.response.to.have.status(200);",
+              "  var token = pm.response.json().token;",
+              "  pm.collectionVariables.set(\"token\", token);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users / Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane+{{timestamp}}@example.com\",\n  \"age\": 30\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/v1/users", "host": ["{{base_url}}"], "path": ["api", "v1", "users"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "pm.variables.set('timestamp', Date.now());"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"User created\", function () {",
+              "  pm.response.to.have.status(201);",
+              "  var user = pm.response.json();",
+              "  pm.collectionVariables.set(\"user_id\", user.id);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users / List",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/api/v1/users", "host": ["{{base_url}}"], "path": ["api", "v1", "users"] }
+      }
+    },
+    {
+      "name": "Users / Get",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/api/v1/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "{{user_id}}"] }
+      }
+    },
+    {
+      "name": "Users / Update",
+      "request": {
+        "method": "PUT",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"age\": 32\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/v1/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "{{user_id}}"] }
+      }
+    },
+    {
+      "name": "Files / Add",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "Authorization", "value": "Bearer {{token}}" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"passport\",\n  \"path\": \"/tmp/passport.pdf\"\n}"
+        },
+        "url": { "raw": "{{base_url}}/api/v1/users/{{user_id}}/files", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "{{user_id}}", "files"] }
+      }
+    },
+    {
+      "name": "Files / List",
+      "request": {
+        "method": "GET",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/api/v1/users/{{user_id}}/files", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "{{user_id}}", "files"] }
+      }
+    },
+    {
+      "name": "Files / Delete All",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/api/v1/users/{{user_id}}/files", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "{{user_id}}", "files"] }
+      }
+    },
+    {
+      "name": "Users / Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+        "url": { "raw": "{{base_url}}/api/v1/users/{{user_id}}", "host": ["{{base_url}}"], "path": ["api", "v1", "users", "{{user_id}}"] }
+      }
+    }
+  ]
+}

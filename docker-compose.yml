@@ -1,0 +1,39 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: users
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  api:
+    build: .
+    depends_on:
+      - postgres
+      - rabbitmq
+    environment:
+      HTTP_PORT: "8080"
+      POSTGRES_DSN: "postgres://postgres:postgres@postgres:5432/users?sslmode=disable"
+      RABBITMQ_DSN: "amqp://guest:guest@rabbitmq:5672/"
+      JWT_SECRET: "supersecret"
+      ADMIN_USERNAME: "admin"
+      ADMIN_PASSWORD: "changeme"
+    ports:
+      - "8080:8080"
+
+volumes:
+  pg_data: {}
